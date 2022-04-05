@@ -3,6 +3,7 @@ package apis
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -30,6 +31,7 @@ type SMMSV2Response struct {
 		Delete    string `json:"delete"`
 		Page      string `json:"page"`
 	} `json:"data"`
+	Images    string `json:"images"`
 	RequestId string `json:"RequestId"`
 }
 
@@ -70,5 +72,11 @@ func (smms *SMMS) Up(path string) (string, error) {
 	}
 	respWriter := &SMMSV2RespWriter{}
 	io.Copy(respWriter, response.Body)
-	return respWriter.resp.Data.Url, nil
+	resp := respWriter.resp
+	if resp.Success {
+		return resp.Data.Url, nil
+	} else if resp.Images != "" {
+		return resp.Images, nil
+	}
+	return "", errors.New("upload failed")
 }
